@@ -1,0 +1,432 @@
+{
+  "info": {
+    "name": "Smart Logistics API - Orders",
+    "description": "Postman collection for testing /api/v2/orders endpoint\n\n## Test Coverage:\n- GET orders (list, by ID, filters)\n- POST create order\n- PATCH update order status\n- DELETE cancel order\n- Validation tests\n- Error handling\n\n## Usage:\n1. Import this collection to Postman\n2. Set environment variables (base_url, api_key)\n3. Run requests individually or as collection runner",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Orders - Positive Tests",
+      "item": [
+        {
+          "name": "GET All Orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has orders array\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('orders');",
+                  "    pm.expect(jsonData.orders).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test(\"Response time is less than 500ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});" 
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"]
+            },
+            "description": "Retrieve all orders from the system"
+          }
+        },
+        {
+          "name": "GET Order by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Order has required fields\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('order_id');",
+                  "    pm.expect(jsonData).to.have.property('customer_name');",
+                  "    pm.expect(jsonData).to.have.property('delivery_address');",
+                  "    pm.expect(jsonData).to.have.property('weight');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test(\"Weight is positive number\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.weight).to.be.a('number');",
+                  "    pm.expect(jsonData.weight).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders", "{{order_id}}"]
+            },
+            "description": "Get specific order by ID"
+          }
+        },
+        {
+          "name": "POST Create New Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Response contains order_id\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('order_id');",
+                  "    pm.environment.set(\"created_order_id\", jsonData.order_id);",
+                  "});",
+                  "",
+                  "pm.test(\"Order status is 'pending'\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('pending');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Иван Иванов\",\n  \"customer_phone\": \"+79161234567\",\n  \"delivery_address\": {\n    \"city\": \"Москва\",\n    \"street\": \"Ленина\",\n    \"building\": \"10\",\n    \"apartment\": \"5\"\n  },\n  \"items\": [\n    {\n      \"name\": \"Товар А\",\n      \"quantity\": 2,\n      \"weight_kg\": 3.5\n    },\n    {\n      \"name\": \"Товар Б\",\n      \"quantity\": 1,\n      \"weight_kg\": 1.2\n    }\n  ],\n  \"delivery_date\": \"2026-06-15\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"]
+            },
+            "description": "Create a new delivery order"
+          }
+        },
+        {
+          "name": "PATCH Update Order Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Status updated successfully\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql('in_transit');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_transit\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders", "{{order_id}}"]
+            },
+            "description": "Update order status (pending → in_transit → delivered)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders - Negative Tests",
+      "item": [
+        {
+          "name": "GET Non-existent Order",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders/99999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders", "99999999"]
+            },
+            "description": "Test 404 response for non-existent order"
+          }
+        },
+        {
+          "name": "POST Invalid Order (Missing Required)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Validation error returned\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('error');",
+                  "    pm.expect(jsonData.error).to.include('required');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Тест\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"]
+            },
+            "description": "Test validation: missing delivery_address"
+          }
+        },
+        {
+          "name": "POST Negative Weight",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Weight validation error\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.include('weight');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_name\": \"Тест\",\n  \"delivery_address\": {\"city\": \"Москва\"},\n  \"items\": [{\"name\": \"A\", \"weight_kg\": -5}]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"]
+            },
+            "description": "Test boundary: negative weight"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders - Filters",
+      "item": [
+        {
+          "name": "GET Orders by Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All orders have correct status\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.orders.forEach(order => {",
+                  "        pm.expect(order.status).to.eql('pending');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders?status=pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            },
+            "description": "Filter orders by status"
+          }
+        },
+        {
+          "name": "GET Orders by Date Range",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{api_key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v2/orders?date_from=2026-06-01&date_to=2026-06-30",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v2", "orders"],
+              "query": [
+                {
+                  "key": "date_from",
+                  "value": "2026-06-01"
+                },
+                {
+                  "key": "date_to",
+                  "value": "2026-06-30"
+                }
+              ]
+            },
+            "description": "Filter orders by delivery date range"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://api.smartlogistics.example.com",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "your_api_key_here",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "12345",
+      "type": "string"
+    }
+  ]
+}
